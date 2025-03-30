@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <title>Visor Maniquí 3D</title>
+  <style>
+    body { margin: 0; overflow: hidden; background: #eaeaea; }
+    #gui-container { position: absolute; top: 0; right: 0; z-index: 10; }
+  </style>
+</head>
+<body>
+  <div id="gui-container"></div>
+
+  <script src="https://cdn.jsdelivr.net/npm/three@0.158.0/build/three.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.158.0/examples/js/controls/OrbitControls.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/dat.gui@0.7.9/build/dat.gui.min.js"></script>
+
+  <script>
+    const scene = new THREE.Scene();
+    scene.background = new THREE.Color(0xf0f0f0);
+
+    const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000);
+    camera.position.set(6, 4, 10);
+
+    const renderer = new THREE.WebGLRenderer({ antialias: true });
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    document.body.appendChild(renderer.domElement);
+
+    const controls = new THREE.OrbitControls(camera, renderer.domElement);
+    controls.enableDamping = true;
+
+    const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+    scene.add(ambientLight);
+
+    const directionalLight = new THREE.DirectionalLight(0xffffff, 1);
+    directionalLight.position.set(10, 10, 10);
+    scene.add(directionalLight);
+
+    const gui = new dat.GUI({ autoPlace: false });
+    document.getElementById('gui-container').appendChild(gui.domElement);
+    const lightFolder = gui.addFolder('Luz direccional');
+    lightFolder.add(directionalLight.position, 'x', -20, 20).name('X');
+    lightFolder.add(directionalLight.position, 'y', -20, 20).name('Y');
+    lightFolder.add(directionalLight.position, 'z', -20, 20).name('Z');
+    lightFolder.open();
+
+    const clayMaterial = new THREE.MeshStandardMaterial({ color: 0xdddddd, roughness: 1, metalness: 0 });
+
+    const maniqui = new THREE.Group();
+
+    const torso = new THREE.Mesh(new THREE.BoxGeometry(2, 2.5, 1), clayMaterial);
+    torso.position.y = 3;
+    torso.rotation.x = THREE.MathUtils.degToRad(-10);
+    torso.rotation.y = THREE.MathUtils.degToRad(10);
+    maniqui.add(torso);
+
+    const midSpine = new THREE.Mesh(new THREE.CylinderGeometry(0.1, 0.1, 0.5, 16), clayMaterial);
+    midSpine.position.y = 2.1;
+    maniqui.add(midSpine);
+
+    const spine = new THREE.Mesh(new THREE.CylinderGeometry(0.1, 0.1, 1.2, 16), clayMaterial);
+    spine.position.y = 1.2;
+    spine.rotation.z = THREE.MathUtils.degToRad(10);
+    maniqui.add(spine);
+
+    const hip = new THREE.Mesh(new THREE.BoxGeometry(1.6, 1.2, 1), clayMaterial);
+    hip.position.y = 0.5;
+    hip.rotation.y = THREE.MathUtils.degToRad(5);
+    maniqui.add(hip);
+
+    const neck = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.08, 0.5, 16), clayMaterial);
+    neck.position.y = 4.4;
+    neck.rotation.z = THREE.MathUtils.degToRad(-5);
+    maniqui.add(neck);
+
+    const head = new THREE.Mesh(new THREE.BoxGeometry(1, 1, 1), clayMaterial);
+    head.position.y = 5.1;
+    head.rotation.x = THREE.MathUtils.degToRad(10);
+    head.rotation.y = THREE.MathUtils.degToRad(-15);
+    maniqui.add(head);
+
+    const hombros = [
+      { x: -1.3, dir: -1 },
+      { x:  1.3, dir: 1 }
+    ];
+
+    hombros.forEach(({ x, dir }) => {
+      const shoulder = new THREE.Mesh(new THREE.SphereGeometry(0.3, 16, 16), clayMaterial);
+      shoulder.position.set(x, 3.8, 0);
+      maniqui.add(shoulder);
+
+      const upperArm = new THREE.Mesh(new THREE.CylinderGeometry(0.15, 0.15, 1.5, 16), clayMaterial);
+      upperArm.position.set(x + 0.8 * dir, 3, 0);
+      upperArm.rotation.z = THREE.MathUtils.degToRad(30 * dir);
+      maniqui.add(upperArm);
+
+      const forearm = new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.12, 1.3, 16), clayMaterial);
+      forearm.position.set(x + 1.6 * dir, 2.1, 0);
+      forearm.rotation.z = THREE.MathUtils.degToRad(60 * dir);
+      maniqui.add(forearm);
+
+      const hand = new THREE.Mesh(new THREE.BoxGeometry(0.4, 0.4, 0.4), clayMaterial);
+      hand.position.set(x + 2.1 * dir, 1.3, 0);
+      maniqui.add(hand);
+    });
+
+    [-0.5, 0.5].forEach(x => {
+      const thigh = new THREE.Mesh(new THREE.CylinderGeometry(0.18, 0.18, 1.6, 16), clayMaterial);
+      thigh.position.set(x, -0.3, 0);
+      thigh.rotation.z = THREE.MathUtils.degToRad(5);
+      maniqui.add(thigh);
+
+      const knee = new THREE.Mesh(new THREE.SphereGeometry(0.2, 16, 16), clayMaterial);
+      knee.position.set(x, -1.1, 0);
+      maniqui.add(knee);
+
+      const lowerLeg = new THREE.Mesh(new THREE.CylinderGeometry(0.15, 0.15, 1.4, 16), clayMaterial);
+      lowerLeg.position.set(x, -2, 0);
+      maniqui.add(lowerLeg);
+
+      const heel = new THREE.Mesh(new THREE.SphereGeometry(0.2, 16, 16), clayMaterial);
+      heel.position.set(x, -2.8, -0.2);
+      maniqui.add(heel);
+
+      const foot = new THREE.Mesh(new THREE.CylinderGeometry(0.2, 0.2, 0.8, 16), clayMaterial);
+      foot.position.set(x, -2.9, 0.4);
+      foot.rotation.x = THREE.MathUtils.degToRad(90);
+      maniqui.add(foot);
+    });
+
+    maniqui.position.y = 1.5;
+    scene.add(maniqui);
+
+    function animate() {
+      requestAnimationFrame(animate);
+      controls.update();
+      renderer.render(scene, camera);
+    }
+    animate();
+
+    window.addEventListener('resize', () => {
+      camera.aspect = window.innerWidth / window.innerHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(window.innerWidth, window.innerHeight);
+    });
+  </script>
+</body>
+</html>
